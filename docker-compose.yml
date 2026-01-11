@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  cv-ai-service:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=local
+      - APP_LOG_LEVEL=DEBUG
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - LLM_PROVIDER=gemini-sdk
+      - HTTP_TIMEOUT=30
+      - HTTP_MAX_FILE_SIZE_MB=10
+      - HTTP_RETRY_ATTEMPTS=3
+    volumes:
+      - ./app:/app/app  # hot reload для разработки
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+

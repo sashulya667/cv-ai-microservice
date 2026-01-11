@@ -17,3 +17,13 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
     gemini_base_url: str = Field(default="https://generativelanguage.googleapis.com", alias="GEMINI_BASE_URL")
     gemini_model: str = Field(default="gemini-2.0-flash", alias="GEMINI_MODEL")
+
+    # HTTP Client settings
+    http_timeout: int = Field(default=30, alias="HTTP_TIMEOUT")
+    http_max_file_size_mb: int = Field(default=10, alias="HTTP_MAX_FILE_SIZE_MB")
+    http_retry_attempts: int = Field(default=3, alias="HTTP_RETRY_ATTEMPTS")
+    http_retry_backoff_factor: float = Field(default=0.5, alias="HTTP_RETRY_BACKOFF_FACTOR")
+
+    # Rate Limiting
+    rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")
+    rate_limit_per_hour: int = Field(default=10, alias="RATE_LIMIT_PER_HOUR")

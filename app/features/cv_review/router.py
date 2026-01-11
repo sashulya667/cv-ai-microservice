@@ -1,40 +1,53 @@
-from typing import List
-from fastapi import APIRouter, File, Request, UploadFile
+from fastapi import APIRouter, Request
 
 from app.ai.base import LLMFile
 from app.ai.registry import LLMRegistry
 from app.common.errors import BadRequest
+from app.common.http_client import download_file_from_url
 from app.config import Settings
-from app.features.cv_review.schemas import CVReviewResponse
+from app.features.cv_review.schemas import CVReviewRequest, CVReviewResponse
 from app.features.cv_review.service import CVReviewService
+import logging
 
 router = APIRouter(tags=["cv"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/cv/review", response_model=CVReviewResponse)
 async def review_cv(
     request: Request,
-    files: List[UploadFile] = File(...),
+    payload: CVReviewRequest,
 ) -> CVReviewResponse:
     settings: Settings = request.app.state.settings
 
-    if not files or len(files) < 1:
-        raise BadRequest("Нужно загрузить минимум 1 файл CV (PDF).")
+    if settings.rate_limit_enabled and hasattr(request.app.state, "rate_limiter"):
+        request.app.state.rate_limiter.check_limit(request)
 
-    if len(files) > 2:
-        raise BadRequest("Можно загрузить максимум 2 файла: текущий CV и предыдущий CV.")
+    logger.info(
+        "CV review request received",
+        extra={"cv_count": len(payload.cv_urls)},
+    )
 
-    llm_files: List[LLMFile] = []
-    for i, f in enumerate(files, start=1):
-        if f.content_type not in ("application/pdf", "application/x-pdf"):
-            raise BadRequest(f"Файл #{i}: поддерживаются только PDF.")
+    if not payload.cv_urls or len(payload.cv_urls) < 1:
+        raise BadRequest("Нужно передать минимум 1 URL на CV (PDF).")
 
-        file_bytes = await f.read()
+    if len(payload.cv_urls) > 2:
+        raise BadRequest("Можно передать максимум 2 URL: текущий CV и предыдущий CV.")
+
+    llm_files: list[LLMFile] = []
+    for i, url in enumerate(payload.cv_urls, start=1):
+        file_bytes = await download_file_from_url(
+            str(url),
+            timeout=settings.http_timeout,
+            max_size_mb=settings.http_max_file_size_mb,
+            max_retries=settings.http_retry_attempts,
+            backoff_factor=settings.http_retry_backoff_factor,
+        )
 
         llm_files.append(
             LLMFile(
-                filename=f.filename or f"cv_{i}.pdf",
-                mime_type=f.content_type or "application/pdf",
+                filename=f"cv_{i}.pdf",
+                mime_type="application/pdf",
                 content=file_bytes,
             )
         )
@@ -44,4 +57,14 @@ async def review_cv(
 
     service = CVReviewService(settings=settings, llm=llm)
 
-    return await service.review(files=llm_files)
+    result = await service.review(files=llm_files)
+    
+    logger.info(
+        "CV review completed",
+        extra={
+            "cv_count": len(payload.cv_urls),
+            "overall_score": result.overall_score,
+        },
+    )
+    
+    return result

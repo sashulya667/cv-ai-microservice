@@ -1,4 +1,13 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
+
+
+class CVReviewRequest(BaseModel):
+    cv_urls: list[HttpUrl] = Field(
+        ...,
+        min_length=1,
+        max_length=2,
+        description="Список URL на PDF файлы CV (1-2 файла)",
+    )
 
 
 class CVReviewResponse(BaseModel):
