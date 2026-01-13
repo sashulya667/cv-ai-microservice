@@ -5,7 +5,11 @@ from app.ai.registry import LLMRegistry
 from app.common.errors import BadRequest
 from app.common.http_client import download_file_from_url
 from app.config import Settings
-from app.features.cv_review.schemas import CVReviewRequest, CVReviewResponse
+from app.features.cv_review.schemas import (
+    CVComparisonResponse,
+    CVReviewRequest,
+    CVReviewResponse,
+)
 from app.features.cv_review.service import CVReviewService
 import logging
 
@@ -13,11 +17,11 @@ router = APIRouter(tags=["cv"])
 logger = logging.getLogger(__name__)
 
 
-@router.post("/cv/review", response_model=CVReviewResponse)
+@router.post("/cv/review")
 async def review_cv(
     request: Request,
     payload: CVReviewRequest,
-) -> CVReviewResponse:
+) -> CVReviewResponse | CVComparisonResponse:
     settings: Settings = request.app.state.settings
 
     if settings.rate_limit_enabled and hasattr(request.app.state, "rate_limiter"):
@@ -59,12 +63,22 @@ async def review_cv(
 
     result = await service.review(files=llm_files)
     
-    logger.info(
-        "CV review completed",
-        extra={
-            "cv_count": len(payload.cv_urls),
-            "overall_score": result.overall_score,
-        },
-    )
+    if isinstance(result, CVComparisonResponse):
+        logger.info(
+            "CV comparison completed",
+            extra={
+                "delta_overall": result.delta_overall,
+                "delta_ats": result.delta_ats,
+                "current_score": result.current_overall_score,
+            },
+        )
+    else:
+        logger.info(
+            "CV review completed",
+            extra={
+                "cv_count": len(payload.cv_urls),
+                "overall_score": result.overall_score,
+            },
+        )
     
     return result
