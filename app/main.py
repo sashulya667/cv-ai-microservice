@@ -3,12 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.common.errors import install_exception_handlers
 from app.common.logging import configure_logging
-from app.common.middleware import RequestContextMiddleware
+from app.common.middleware import ConcurrencyLimitMiddleware, RequestContextMiddleware
 from app.common.rate_limiter import RateLimiter
 from app.config import Settings
+from app.features.candidate_rank.router import router as candidate_rank_router
+from app.features.cv_job_match.router import router as cv_job_match_router
 from app.features.cv_review.router import router as cv_review_router
 from app.features.health.router import router as health_router
-from app.features.cv_job_match.router import router as cv_job_match_router
 
 
 def create_app() -> FastAPI:
@@ -38,10 +39,14 @@ def create_app() -> FastAPI:
 
     app.add_middleware(RequestContextMiddleware)
 
+    if settings.max_concurrent_requests > 0:
+        app.add_middleware(ConcurrencyLimitMiddleware, max_concurrent=settings.max_concurrent_requests)
+
     install_exception_handlers(app)
 
     app.include_router(health_router)
     app.include_router(cv_review_router)
     app.include_router(cv_job_match_router)
+    app.include_router(candidate_rank_router)
 
     return app

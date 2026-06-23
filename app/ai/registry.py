@@ -17,12 +17,18 @@ class LLMRegistry:
             return GeminiClient(
                 api_key=self.settings.gemini_api_key,
                 model=self.settings.gemini_model,
+                timeout=self.settings.llm_timeout,
+                retry_attempts=self.settings.llm_retry_attempts,
+                retry_backoff=self.settings.llm_retry_backoff_factor,
             )
 
         if name == "gemini-sdk":
             return GeminiSDKClient(
                 api_key=self.settings.gemini_api_key,
                 model=self.settings.gemini_model,
+                timeout=self.settings.llm_timeout,
+                retry_attempts=self.settings.llm_retry_attempts,
+                retry_backoff=self.settings.llm_retry_backoff_factor,
             )
 
         if name == "mock":

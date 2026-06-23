@@ -38,10 +38,7 @@ def install_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(BadRequest)
     async def handle_bad_request(request: Request, exc: BadRequest) -> JSONResponse:
         request_id = request_id_var.get("")
-        logger.warning(
-            "Bad request",
-            extra={"request_id": request_id, "error": exc.message},
-        )
+        logger.warning("Bad request: %s", exc.message, extra={"request_id": request_id})
         return JSONResponse(
             status_code=400,
             content={
@@ -54,10 +51,7 @@ def install_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(UpstreamError)
     async def handle_upstream(request: Request, exc: UpstreamError) -> JSONResponse:
         request_id = request_id_var.get("")
-        logger.error(
-            "Upstream error",
-            extra={"request_id": request_id, "error": exc.message},
-        )
+        logger.error("Upstream error: %s", exc.message, extra={"request_id": request_id})
         return JSONResponse(
             status_code=502,
             content={

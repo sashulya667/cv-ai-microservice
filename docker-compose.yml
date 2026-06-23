@@ -13,6 +13,9 @@ services:
       - HTTP_TIMEOUT=30
       - HTTP_MAX_FILE_SIZE_MB=10
       - HTTP_RETRY_ATTEMPTS=3
+      - RATE_LIMIT_ENABLED=false
+      - UVICORN_WORKERS=2
+      - MAX_CONCURRENT_REQUESTS=10
     volumes:
       - ./app:/app/app  # hot reload для разработки
     restart: unless-stopped

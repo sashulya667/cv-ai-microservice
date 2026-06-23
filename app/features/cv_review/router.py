@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Request
+import logging
 
-from app.ai.base import LLMFile
+from fastapi import APIRouter, Depends, Request
+
 from app.ai.registry import LLMRegistry
-from app.common.errors import BadRequest
-from app.common.http_client import download_file_from_url
+from app.common.dependencies import rate_limit
 from app.config import Settings
 from app.features.cv_review.schemas import (
     CVComparisonResponse,
@@ -11,9 +11,8 @@ from app.features.cv_review.schemas import (
     CVReviewResponse,
 )
 from app.features.cv_review.service import CVReviewService
-import logging
 
-router = APIRouter(tags=["cv"])
+router = APIRouter(tags=["cv"], dependencies=[Depends(rate_limit)])
 logger = logging.getLogger(__name__)
 
 
@@ -24,45 +23,15 @@ async def review_cv(
 ) -> CVReviewResponse | CVComparisonResponse:
     settings: Settings = request.app.state.settings
 
-    if settings.rate_limit_enabled and hasattr(request.app.state, "rate_limiter"):
-        request.app.state.rate_limiter.check_limit(request)
-
     logger.info(
         "CV review request received",
-        extra={"cv_count": len(payload.cv_urls)},
+        extra={"mode": "comparison" if payload.is_comparison else "single"},
     )
 
-    if not payload.cv_urls or len(payload.cv_urls) < 1:
-        raise BadRequest("Нужно передать минимум 1 URL на CV (PDF).")
-
-    if len(payload.cv_urls) > 2:
-        raise BadRequest("Можно передать максимум 2 URL: текущий CV и предыдущий CV.")
-
-    llm_files: list[LLMFile] = []
-    for i, url in enumerate(payload.cv_urls, start=1):
-        file_bytes = await download_file_from_url(
-            str(url),
-            timeout=settings.http_timeout,
-            max_size_mb=settings.http_max_file_size_mb,
-            max_retries=settings.http_retry_attempts,
-            backoff_factor=settings.http_retry_backoff_factor,
-        )
-
-        llm_files.append(
-            LLMFile(
-                filename=f"cv_{i}.pdf",
-                mime_type="application/pdf",
-                content=file_bytes,
-            )
-        )
-
-    provider = settings.llm_provider
-    llm = LLMRegistry(settings).get(provider)
-
+    llm = LLMRegistry(settings).get(settings.llm_provider)
     service = CVReviewService(settings=settings, llm=llm)
+    result = await service.review(payload=payload)
 
-    result = await service.review(files=llm_files)
-    
     if isinstance(result, CVComparisonResponse):
         logger.info(
             "CV comparison completed",
@@ -75,10 +44,7 @@ async def review_cv(
     else:
         logger.info(
             "CV review completed",
-            extra={
-                "cv_count": len(payload.cv_urls),
-                "overall_score": result.overall_score,
-            },
+            extra={"overall_score": result.overall_score},
         )
-    
+
     return result

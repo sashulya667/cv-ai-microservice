@@ -42,6 +42,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD curl -f http://localhost:8000/health/live || exit 1
 
-# Use single worker - безопасно для async приложений с shared state
-# Для масштабирования используй несколько контейнеров за load balancer
-CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "exec uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS:-4}"]
