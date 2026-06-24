@@ -21,6 +21,8 @@ _CONCURRENCY = 10
 class _LLMCandidateResult(BaseModel):
     criteria_results: list[CriterionResult]
     radar: RadarAxes
+    strengths: list[str] = Field(min_length=1)
+    risks: list[str] = Field(min_length=1)
     summary: str = Field(min_length=1)
 
 
@@ -63,6 +65,8 @@ class CandidateRankService:
                 total_score=_compute_total_score(result.radar),
                 criteria_results=result.criteria_results,
                 radar=result.radar,
+                strengths=result.strengths,
+                risks=result.risks,
                 summary=result.summary,
             )
 

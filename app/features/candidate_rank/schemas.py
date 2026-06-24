@@ -40,6 +40,8 @@ class RankedCandidate(BaseModel):
     total_score: int = Field(ge=0, le=100)
     criteria_results: list[CriterionResult]
     radar: RadarAxes
+    strengths: list[str]
+    risks: list[str]
     summary: str
 
 
