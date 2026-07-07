@@ -16,18 +16,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy dependency files
 COPY pyproject.toml /app/
 
-# Install Python dependencies
-# Извлекаем зависимости из pyproject.toml и устанавливаем напрямую
+# Install Python dependencies — source of truth is pyproject.toml
 RUN pip install --no-cache-dir -U pip \
- && pip install --no-cache-dir \
-    'fastapi>=0.110' \
-    'uvicorn[standard]>=0.27' \
-    'httpx>=0.26' \
-    'pydantic>=2.6' \
-    'pydantic-settings>=2.2' \
-    'python-multipart>=0.0.9' \
-    'pypdf>=4.0.0' \
-    'google-genai'
+ && python3 -c "\
+import tomllib; \
+deps = tomllib.load(open('/app/pyproject.toml', 'rb'))['project']['dependencies']; \
+open('/tmp/reqs.txt', 'w').write('\n'.join(deps))" \
+ && pip install --no-cache-dir -r /tmp/reqs.txt
 
 # Copy application code
 COPY app /app/app
