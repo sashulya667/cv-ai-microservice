@@ -12,6 +12,7 @@ from app.features.candidate_rank.schemas import (
     CandidateRankResponse,
     CriterionResult,
     RadarAxes,
+    RadarExplanations,
     RankedCandidate,
 )
 
@@ -21,20 +22,10 @@ _CONCURRENCY = 10
 class _LLMCandidateResult(BaseModel):
     criteria_results: list[CriterionResult]
     radar: RadarAxes
+    radar_explanations: RadarExplanations
     strengths: list[str] = Field(min_length=1)
     risks: list[str] = Field(min_length=1)
     summary: str = Field(min_length=1)
-
-
-def _compute_total_score(radar: RadarAxes) -> int:
-    """Взвешенный итоговый скор: Skills 40%, Experience 30%, Domain 20%, Location 10%."""
-    raw = (
-        radar.skills * 0.40
-        + radar.experience * 0.30
-        + radar.domain * 0.20
-        + radar.location * 0.10
-    )
-    return min(100, max(0, round(raw)))
 
 
 class CandidateRankService:
@@ -62,9 +53,10 @@ class CandidateRankService:
             result = parse_model_output(text=resp.text, schema=_LLMCandidateResult)
             return RankedCandidate(
                 candidate_id=candidate.candidate_id,
-                total_score=_compute_total_score(result.radar),
+                total_score=result.radar.mean_score(),
                 criteria_results=result.criteria_results,
                 radar=result.radar,
+                radar_explanations=result.radar_explanations,
                 strengths=result.strengths,
                 risks=result.risks,
                 summary=result.summary,

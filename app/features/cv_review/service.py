@@ -1,11 +1,16 @@
 import json
+from typing import Type, TypeVar
+
+from pydantic import BaseModel
 
 from app.ai.base import LLMClient, LLMInput
-from app.ai.prompts.cv_review import system_prompt, user_prompt
+from app.ai.prompts.cv_review import compare_user_prompt, review_user_prompt, system_prompt
 from app.common.parsing import parse_model_output
 from app.config import Settings
-from app.features.cv_review.schemas import CVComparisonResponse, CVReviewRequest, CVReviewResponse
+from app.features.cv_review.schemas import CVComparisonResponse, CVReviewResponse
 from app.features.shared.schemas import Resume
+
+T = TypeVar("T", bound=BaseModel)
 
 
 def _resume_to_json(resume: Resume) -> str:
@@ -17,22 +22,23 @@ class CVReviewService:
         self.settings = settings
         self.llm = llm
 
-    async def review(self, *, payload: CVReviewRequest) -> CVReviewResponse | CVComparisonResponse:
-        if payload.is_comparison:
-            prompt = user_prompt(
-                compare=True,
-                current_resume_json=_resume_to_json(payload.currentResume),  # type: ignore[arg-type]
-                previous_resume_json=_resume_to_json(payload.previousResume),  # type: ignore[arg-type]
-            )
-            schema = CVComparisonResponse
-        else:
-            prompt = user_prompt(
-                compare=False,
-                resume_json=_resume_to_json(payload.resume),  # type: ignore[arg-type]
-            )
-            schema = CVReviewResponse
+    async def review(self, *, resume: Resume) -> CVReviewResponse:
+        return await self._generate(
+            user=review_user_prompt(resume_json=_resume_to_json(resume)),
+            schema=CVReviewResponse,
+        )
 
+    async def compare(self, *, current: Resume, previous: Resume) -> CVComparisonResponse:
+        return await self._generate(
+            user=compare_user_prompt(
+                current_resume_json=_resume_to_json(current),
+                previous_resume_json=_resume_to_json(previous),
+            ),
+            schema=CVComparisonResponse,
+        )
+
+    async def _generate(self, *, user: str, schema: Type[T]) -> T:
         resp = await self.llm.generate(
-            inp=LLMInput(system=system_prompt("v1"), user=prompt)
+            inp=LLMInput(system=system_prompt("v1"), user=user)
         )
         return parse_model_output(text=resp.text, schema=schema)

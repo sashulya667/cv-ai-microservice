@@ -1,38 +1,15 @@
-from typing import Optional
-
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 from app.features.shared.schemas import Resume
 
 
 class CVReviewRequest(BaseModel):
-    resume: Optional[Resume] = None
-    currentResume: Optional[Resume] = None
-    previousResume: Optional[Resume] = None
+    resume: Resume
 
-    @model_validator(mode="after")
-    def _validate_mode(self) -> "CVReviewRequest":
-        has_single = self.resume is not None
-        has_both = self.currentResume is not None and self.previousResume is not None
-        has_partial = (self.currentResume is None) != (self.previousResume is None)
 
-        if has_partial:
-            raise ValueError(
-                "Для сравнения необходимо передать оба поля: 'currentResume' и 'previousResume'."
-            )
-        if not has_single and not has_both:
-            raise ValueError(
-                "Укажите 'resume' для анализа или 'currentResume' + 'previousResume' для сравнения."
-            )
-        if has_single and has_both:
-            raise ValueError(
-                "Нельзя передавать 'resume' вместе с 'currentResume'/'previousResume'."
-            )
-        return self
-
-    @property
-    def is_comparison(self) -> bool:
-        return self.currentResume is not None
+class CVComparisonRequest(BaseModel):
+    currentResume: Resume
+    previousResume: Resume
 
 
 class CVReviewResponse(BaseModel):
