@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", alias="APP_LOG_LEVEL")
 
     # LLM provider selection
-    llm_provider: str = Field(default="gemini-sdk", alias="LLM_PROVIDER")
+    llm_provider: str = Field(default="gemini-http", alias="LLM_PROVIDER")
 
     # Gemini REST
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")

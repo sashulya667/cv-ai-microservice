@@ -9,7 +9,7 @@ services:
       - APP_ENV=local
       - APP_LOG_LEVEL=DEBUG
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - LLM_PROVIDER=gemini-sdk
+      - LLM_PROVIDER=gemini-http
       - HTTP_TIMEOUT=30
       - HTTP_MAX_FILE_SIZE_MB=10
       - HTTP_RETRY_ATTEMPTS=3
