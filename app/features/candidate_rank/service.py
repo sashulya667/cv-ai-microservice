@@ -26,6 +26,7 @@ class _LLMCandidateResult(BaseModel):
     strengths: list[str] = Field(min_length=1)
     risks: list[str] = Field(min_length=1)
     summary: str = Field(min_length=1)
+    interview_questions: list[str] = Field(min_length=3, max_length=6)
 
 
 class CandidateRankService:
@@ -60,6 +61,7 @@ class CandidateRankService:
                 strengths=result.strengths,
                 risks=result.risks,
                 summary=result.summary,
+                interview_questions=result.interview_questions,
             )
 
         results = await asyncio.gather(*[_rank_one(c) for c in payload.candidates])

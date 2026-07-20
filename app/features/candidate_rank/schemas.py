@@ -72,6 +72,7 @@ class RankedCandidate(BaseModel):
     strengths: list[str]
     risks: list[str]
     summary: str
+    interview_questions: list[str]
 
 
 class CandidateRankResponse(BaseModel):
