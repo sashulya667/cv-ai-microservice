@@ -7,6 +7,7 @@ from app.common.middleware import ConcurrencyLimitMiddleware, RequestContextMidd
 from app.common.rate_limiter import RateLimiter
 from app.config import Settings
 from app.features.candidate_rank.router import router as candidate_rank_router
+from app.features.cover_letter.router import router as cover_letter_router
 from app.features.cv_job_match.router import router as cv_job_match_router
 from app.features.cv_review.router import router as cv_review_router
 from app.features.health.router import router as health_router
@@ -50,5 +51,6 @@ def create_app() -> FastAPI:
     app.include_router(cv_job_match_router)
     app.include_router(candidate_rank_router)
     app.include_router(profile_boost_router)
+    app.include_router(cover_letter_router)
 
     return app
