@@ -74,6 +74,7 @@ class Resume(BaseModel):
     salaryCurrency: Optional[str] = None
     workFormats: list[str] = []
     employmentTypes: list[str] = []
+    specializations: list[str] = []
     skills: list[str] = []
     workExperiences: list[WorkExperience] = []
     education: list[Education] = []

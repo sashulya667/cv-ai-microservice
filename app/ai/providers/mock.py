@@ -125,9 +125,12 @@ _JOB_MATCH_PAYLOAD = {
     ],
     "gaps": [
         {"type": "must_have_skill", "text": "Нет примеров работы с Redis в production"},
-        {"type": "must_have_context", "text": "Отсутствует опыт в high-load системах (>100K RPS) — вакансия требует"},
-        {"type": "seniority_gap", "text": "Недостаточно evidence архитектурных решений для Senior-уровня"},
-        {"type": "nice_to_have", "text": "Отсутствует опыт с Kafka или другими message brokers"},
+        {"type": "must_have_context",
+            "text": "Отсутствует опыт в high-load системах (>100K RPS) — вакансия требует"},
+        {"type": "seniority_gap",
+            "text": "Недостаточно evidence архитектурных решений для Senior-уровня"},
+        {"type": "nice_to_have",
+            "text": "Отсутствует опыт с Kafka или другими message brokers"},
     ],
     "recommendations": [
         "Переписать достижения по формуле X-Y-Z: 'Снизил latency API на 40% (с 200ms до 120ms) через внедрение кэширования Redis'",
@@ -195,6 +198,64 @@ _JOB_MATCH_PAYLOAD = {
     },
 }
 
+
+_PROFILE_BOOST_ABOUT_PAYLOAD = {
+    "variants": [
+        {
+            "text": (
+                "Имею опыт работы в своей области и опираюсь на навыки из профиля. "
+                "Ориентируюсь на качественное выполнение задач и развитие в профессии. "
+                "Готов к работе в команде и ответственному подходу к обязанностям."
+            ),
+            "skills": None,
+            "addedSkills": None,
+            "removedSkills": None,
+            "rationale": "Собрал краткое «О себе» на основе должности и опыта из профиля",
+        },
+        {
+            "text": (
+                "Практикую выбранное направление и опираюсь на реальные задачи с прошлых мест работы. "
+                "В работе использую навыки из профиля и готов развиваться дальше. "
+                "Открыт к новым задачам и форматам сотрудничества."
+            ),
+            "skills": None,
+            "addedSkills": None,
+            "removedSkills": None,
+            "rationale": "Альтернативная формулировка с акцентом на практический опыт",
+        },
+    ],
+    "warnings": [],
+}
+
+_PROFILE_BOOST_EXPERIENCE_PAYLOAD = {
+    "variants": [
+        {
+            "text": (
+                "Выполнял основные обязанности по должности\n"
+                "Работал с клиентами и соблюдал стандарты сервиса\n"
+                "Участвовал в решении рабочих задач команды"
+            ),
+            "skills": ["Обслуживание клиентов", "Работа в команде", "Кассовое обслуживание"],
+            "addedSkills": ["Кассовое обслуживание"],
+            "removedSkills": [],
+            "rationale": "Улучшил описание позиции и нормализовал навыки этого места работы",
+        }
+    ],
+    "warnings": [],
+}
+
+_PROFILE_BOOST_SKILLS_PAYLOAD = {
+    "variants": [
+        {
+            "text": None,
+            "skills": ["Обслуживание клиентов", "Работа в команде", "Кассовое обслуживание"],
+            "addedSkills": ["Кассовое обслуживание"],
+            "removedSkills": [],
+            "rationale": "Дополнил список навыков по описанию опыта и должности",
+        }
+    ],
+    "warnings": [],
+}
 
 _CANDIDATE_RANK_PAYLOAD = {
     "criteria_results": [
@@ -275,9 +336,26 @@ def _build_candidate_rank_payload(user_prompt: str) -> dict:
     return {**_CANDIDATE_RANK_PAYLOAD, "criteria_results": criteria_results}
 
 
+def _build_profile_boost_payload(user_prompt: str) -> dict:
+    if "target: skills" in user_prompt:
+        return _PROFILE_BOOST_SKILLS_PAYLOAD
+    if "target: experience" in user_prompt:
+        return _PROFILE_BOOST_EXPERIENCE_PAYLOAD
+
+    payload = _PROFILE_BOOST_ABOUT_PAYLOAD
+    if "variants: 1" in user_prompt:
+        return {
+            "variants": payload["variants"][:1],
+            "warnings": payload["warnings"],
+        }
+    return payload
+
+
 class MockClient(LLMClient):
     async def generate(self, *, inp: LLMInput) -> LLMResponse:
-        if "[CANDIDATE_RANK]" in inp.user:
+        if "[PROFILE_BOOST]" in inp.user:
+            payload = _build_profile_boost_payload(inp.user)
+        elif "[CANDIDATE_RANK]" in inp.user:
             payload = _build_candidate_rank_payload(inp.user)
         elif "ТЕКУЩАЯ ВЕРСИЯ РЕЗЮМЕ" in inp.user:
             payload = _COMPARISON_PAYLOAD

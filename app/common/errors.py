@@ -34,6 +34,13 @@ class UpstreamError(AppError):
         self.message = message
 
 
+class UnprocessableEntity(AppError):
+    def __init__(self, *, error: str, detail: str) -> None:
+        super().__init__(detail)
+        self.error = error
+        self.detail = detail
+
+
 def install_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(BadRequest)
     async def handle_bad_request(request: Request, exc: BadRequest) -> JSONResponse:
@@ -44,6 +51,26 @@ def install_exception_handlers(app: FastAPI) -> None:
             content={
                 "error": "bad_request",
                 "detail": exc.message,
+                "request_id": request_id or None,
+            },
+        )
+
+    @app.exception_handler(UnprocessableEntity)
+    async def handle_unprocessable(
+        request: Request, exc: UnprocessableEntity
+    ) -> JSONResponse:
+        request_id = request_id_var.get("")
+        logger.warning(
+            "Unprocessable entity: %s — %s",
+            exc.error,
+            exc.detail,
+            extra={"request_id": request_id},
+        )
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": exc.error,
+                "detail": exc.detail,
                 "request_id": request_id or None,
             },
         )
