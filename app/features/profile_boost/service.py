@@ -15,7 +15,6 @@ from app.features.profile_boost.schemas import (
 )
 from app.features.profile_boost.validator import validate_request
 
-_LINE_MARKER_RE = re.compile(r"^[\s]*(?:[-•*–—]|\d+[.)])\s+")
 _SKILL_MAX_LEN = 100
 _SKILLS_MAX_COUNT = 30
 
@@ -40,11 +39,6 @@ def _truncate(text: str, max_chars: int) -> tuple[str, bool]:
     if " " in cut:
         cut = cut.rsplit(" ", 1)[0]
     return cut + "…", True
-
-
-def _strip_line_markers(text: str) -> str:
-    lines = [_LINE_MARKER_RE.sub("", line).rstrip() for line in text.splitlines()]
-    return "\n".join(line for line in lines if line.strip())
 
 
 def _normalize_skill_name(value: str) -> str | None:
@@ -104,8 +98,6 @@ def _normalize_variant(
         removed = _normalize_skills(removed)
         if text is None:
             text = ""
-        else:
-            text = _strip_line_markers(text)
         if max_chars is not None and text:
             text, was_truncated = _truncate(text, max_chars)
             if was_truncated:

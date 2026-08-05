@@ -231,9 +231,9 @@ _PROFILE_BOOST_EXPERIENCE_PAYLOAD = {
     "variants": [
         {
             "text": (
-                "Выполнял основные обязанности по должности\n"
-                "Работал с клиентами и соблюдал стандарты сервиса\n"
-                "Участвовал в решении рабочих задач команды"
+                "- Выполнял основные обязанности по должности\n"
+                "- Работал с клиентами и соблюдал стандарты сервиса\n"
+                "- Участвовал в решении рабочих задач команды, усиливая **работу в команде**"
             ),
             "skills": ["Обслуживание клиентов", "Работа в команде", "Кассовое обслуживание"],
             "addedSkills": ["Кассовое обслуживание"],
@@ -252,6 +252,45 @@ _PROFILE_BOOST_SKILLS_PAYLOAD = {
             "addedSkills": ["Кассовое обслуживание"],
             "removedSkills": [],
             "rationale": "Дополнил список навыков по описанию опыта и должности",
+        }
+    ],
+    "warnings": [],
+}
+
+_RESUME_IMPORT_PAYLOAD = {
+    "desiredPosition": "Backend Developer",
+    "about": "Backend-разработчик с опытом построения API и сервисов.",
+    "city": "Алматы",
+    "skills": ["Python", "FastAPI", "PostgreSQL", "Docker"],
+    "workExperiences": [
+        {
+            "companyName": "Tech Corp",
+            "position": "Backend Developer",
+            "startDate": "2022-03-01",
+            "endDate": None,
+            "isCurrent": True,
+            "description": "Разрабатывал REST API и сервисы на Python.",
+            "skills": ["Python", "FastAPI"],
+        },
+        {
+            "companyName": "Startup Inc",
+            "position": "Junior Developer",
+            "startDate": "2020-01-01",
+            "endDate": "2022-02-01",
+            "isCurrent": False,
+            "description": "Участвовал в разработке внутренних инструментов.",
+            "skills": ["Python"],
+        },
+    ],
+    "education": [
+        {
+            "institutionName": "КазНУ",
+            "degree": "Бакалавр",
+            "fieldOfStudy": "Информационные системы",
+            "startYear": 2016,
+            "endYear": 2020,
+            "isCurrent": False,
+            "description": None,
         }
     ],
     "warnings": [],
@@ -353,7 +392,9 @@ def _build_profile_boost_payload(user_prompt: str) -> dict:
 
 class MockClient(LLMClient):
     async def generate(self, *, inp: LLMInput) -> LLMResponse:
-        if "[PROFILE_BOOST]" in inp.user:
+        if "[RESUME_IMPORT]" in inp.user:
+            payload = _RESUME_IMPORT_PAYLOAD
+        elif "[PROFILE_BOOST]" in inp.user:
             payload = _build_profile_boost_payload(inp.user)
         elif "[CANDIDATE_RANK]" in inp.user:
             payload = _build_candidate_rank_payload(inp.user)

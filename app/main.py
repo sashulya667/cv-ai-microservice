@@ -12,6 +12,7 @@ from app.features.cv_job_match.router import router as cv_job_match_router
 from app.features.cv_review.router import router as cv_review_router
 from app.features.health.router import router as health_router
 from app.features.profile_boost.router import router as profile_boost_router
+from app.features.resume_import.router import router as resume_import_router
 
 
 def create_app() -> FastAPI:
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(cv_review_router)
+    app.include_router(resume_import_router)
     app.include_router(cv_job_match_router)
     app.include_router(candidate_rank_router)
     app.include_router(profile_boost_router)

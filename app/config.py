@@ -29,3 +29,10 @@ class Settings(BaseSettings):
 
     # Concurrency (per-worker; 0 = disabled)
     max_concurrent_requests: int = Field(default=10, alias="MAX_CONCURRENT_REQUESTS")
+
+    # Resume import (PDF download + text extract)
+    pdf_max_pages: int = Field(default=20, alias="PDF_MAX_PAGES")
+    pdf_download_timeout: int = Field(default=30, alias="PDF_DOWNLOAD_TIMEOUT")
+    pdf_max_size_mb: int = Field(default=10, alias="PDF_MAX_SIZE_MB")
+    pdf_download_retries: int = Field(default=3, alias="PDF_DOWNLOAD_RETRIES")
+    resume_text_max_chars: int = Field(default=60_000, alias="RESUME_TEXT_MAX_CHARS")
